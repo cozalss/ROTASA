@@ -2,7 +2,7 @@
 // Strings are always inserted as text, so case content is never parsed as HTML.
 import { translate as t } from '../i18n/i18n.js';
 
-const TRANSLATED_ATTRS = new Set(['aria-label', 'title', 'placeholder', 'alt']);
+const TRANSLATED_ATTRS = new Set(['aria-label', 'aria-valuetext', 'title', 'placeholder', 'alt']);
 
 export function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);

@@ -4,6 +4,7 @@ import { h, conceptBox, designerNote } from '../dom.js';
 import { stepHeader, stepLayout, navRow, evidenceBag } from '../components.js';
 import { PROCESS_AREAS, ALL_GOALS, RATINGS, REASONED_GOALS } from '../../data/tmmi.js';
 import { DEFAULT_PA, paTabs, goalCard, ratingSheet, openPa } from './assess-parts.js';
+import { joinAnd } from '../../i18n/i18n.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -18,7 +19,7 @@ function nextHint(state) {
   const open = REASONED_GOALS.filter((id) => !state.assess.revealed[id]);
   const parts = [
     rated < total ? `Rate ${plural(total - rated, 'more goal')}.` : null,
-    open.length ? `Write and lock your reasoning for ${open.join(' and ')}.` : null,
+    open.length ? `Write and lock your reasoning for ${joinAnd(open)}.` : null,
   ];
   return parts.filter(Boolean).join(' ');
 }

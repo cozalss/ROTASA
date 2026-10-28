@@ -361,3 +361,10 @@ html[data-motion="reduce"] body.is-game .app-shell { transition: none; }
 @media (max-width: 760px) {
   .gd-list.is-folded { right: auto; width: auto; }
 }
+
+/* Phones: notices sit under the objective card and left of the HUD button column. */
+@media (max-width: 760px) {
+  .g-toasts { right: 66px; width: calc(100vw - 78px); }
+  #game-ui:has(.g-dialogue-layer) .g-toasts,
+  #game-ui:has(.gd-board) .g-toasts { bottom: auto; top: 146px; }
+}

@@ -30,7 +30,6 @@ export default {
   " booked": " ayarlandı",
   "Notes": "Notlar",
   "Confirm bookings": "Randevuları onayla",
-  " and ": " ve ",
   "The opening call": "Açılış görüşmesi",
   "Agree the plan with the CTO: scope, kind of assessment, two interviews.": "Planı CTO ile kararlaştır: kapsam, değerlendirme türü, iki görüşme.",
   "Plan locked. Press Continue to start your day on site.": "Plan kilitlendi. Sahadaki gününe başlamak için Devam et’e bas.",

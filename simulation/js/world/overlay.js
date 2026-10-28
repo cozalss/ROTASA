@@ -50,7 +50,7 @@ export function createOverlay(host, handlers) {
     b.dataset.id = h.id;
     b.dataset.kind = h.kind || 'document';
     b.dataset.state = h.state || 'available';
-    const extra = STATE_TEXT[h.state] ? ` (${STATE_TEXT[h.state]})` : '';
+    const extra = STATE_TEXT[h.state] ? ` (${t(STATE_TEXT[h.state])})` : '';
     b.setAttribute('aria-label', `${t(h.label)}${h.sublabel ? `, ${t(h.sublabel)}` : ''}${t(extra)}`);
     b.querySelector('.world-hotspot-title').textContent = t(h.label);
     const sub = b.querySelector('.world-hotspot-sub');

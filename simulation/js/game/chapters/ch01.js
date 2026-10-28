@@ -10,6 +10,7 @@ import { timeBudget } from '../../logic/assessment.js';
 import { talk, converse } from '../talk.js';
 import { showVerdict } from '../cues.js';
 import { createBoard, bookingHotspots, BOOK_PREFIX } from './ch01-board.js';
+import { joinAnd } from '../../i18n/i18n.js';
 
 const MURAT = 'cto-office';
 const DOSSIER = 'dossier';
@@ -17,7 +18,7 @@ const DOSSIER = 'dossier';
 const st = { token: 0, met: false, busy: false, board: null };
 
 const nameOf = (id) => INTERVIEWEES.find((p) => p.id === id)?.name ?? id;
-const names = (ids) => ids.map(nameOf).join(' and ');
+const names = (ids) => joinAnd(ids.map(nameOf));
 const sameSet = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
 const lockCount = (plan) => ['scopeLocked', 'typeLocked', 'interviewsLocked'].filter((k) => plan[k]).length;
 const allLocked = (plan) => lockCount(plan) === 3;

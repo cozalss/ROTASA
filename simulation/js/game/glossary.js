@@ -26,7 +26,7 @@ const defId = (id) => `mt-def-${id}`;
 function ensureDefs() {
   if (document.getElementById(DEFS_ID)) return;
   document.body.append(h('div', { id: DEFS_ID, class: 'mt-sr' },
-    GLOSSARY.map((g) => h('span', { id: defId(g.id) }, `${g.term}: ${g.text}`))));
+    GLOSSARY.map((g) => h('span', { id: defId(g.id) }, `${t(g.term)}: ${t(g.text)}`))));
 }
 
 function ensureTip() {

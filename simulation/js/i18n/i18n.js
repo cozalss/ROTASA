@@ -215,6 +215,11 @@ export function translate(text) {
   return localizeNumbers(translateText(text));
 }
 
+/** "A and B" / "A ve B": joins names with the current language's "and". */
+export function joinAnd(items) {
+  return new Intl.ListFormat(lang, { type: 'conjunction' }).format(items);
+}
+
 /** Loads the dictionaries for the current language. Never throws. */
 export async function loadLanguage() {
   document.documentElement.lang = lang;

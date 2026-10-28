@@ -6,6 +6,7 @@ import { patchSlice, toggleInList } from '../../store.js';
 import { SCOPE_OPTIONS, TYPE_OPTIONS, INTERVIEWEES, INTERVIEW_SLOTS, EXPERT, EXPERT_WHY } from '../../data/decisions.js';
 import { findEvidence } from '../../data/evidence.js';
 import { timeBudget, LEVEL3_SCOPE_PENALTY } from '../../logic/assessment.js';
+import { joinAnd } from '../../i18n/i18n.js';
 
 const DECISIONS = [
   { key: 'scope', lock: 'scopeLocked', letter: 'A', label: 'Scope' },
@@ -223,7 +224,7 @@ function interviewDecision(plan, ctx) {
 
 function interviewResult(chosen) {
   const match = sameSet(chosen, EXPERT.interviews);
-  const names = (ids) => ids.map(nameOf).join(' and ');
+  const names = (ids) => joinAnd(ids.map(nameOf));
   const yours = `In Step 2 you can interview ${names(chosen)}.`;
   return feedbackBox(match, match ? `${yours} ${EXPERT_WHY.interviews}` : yours, names(EXPERT.interviews), EXPERT_WHY.interviews);
 }

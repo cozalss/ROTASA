@@ -26,7 +26,9 @@ export default {
   "Document": "Belge",
   "Interview": "Görüşme",
   "Activity": "Etkinlik",
-  "In your bag · click to read": "Çantanda · okumak için tıkla"
+  "In your bag · click to read": "Çantanda · okumak için tıkla",
+  "done": "tamamlandı",
+  "locked": "kilitli"
  },
  "templates": [
   [
@@ -56,6 +58,14 @@ export default {
   [
    "Show ({0} of {1})",
    "Göster ({0}/{1})"
+  ],
+  [
+   "{0} h left",
+   "{0} sa kaldı"
+  ],
+  [
+   "{0} TRY left",
+   "{0} TL kaldı"
   ]
  ]
 };

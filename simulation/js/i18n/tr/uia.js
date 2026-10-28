@@ -194,7 +194,6 @@ export default {
   "Requirement · Decision changes later steps": "Gereksinim · Karar sonraki adımları değiştirir",
   "Only booked people appear in Step 2. Booking the product owner also changes the Step 7 outcome for release decisions.": "Adım 2’de yalnızca ayarlanan kişiler görünür. Ürün sahibini ayarlamak, sürüm kararları için Adım 7 sonucunu da değiştirir.",
   "Lock interview plan": "Görüşme planını kilitle",
-  " and ": " ve ",
   "Case at a glance": "Vaka bir bakışta",
   "Who is who at Rotaşa": "Rotaşa’da kim kim",
   "Scrum, two-week sprints. A major release every six sprints. 4.2 runs in Sprints 37–42.": "Scrum, iki haftalık sprintler. Her altı sprintte bir büyük sürüm. 4.2, Sprint 37–42 arasında ilerliyor.",
