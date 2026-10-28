@@ -18,7 +18,15 @@ export default {
   "Not rated: Not enough evidence, NR": "Derecelendirilmedi: Yeterli kanıt yok, NR",
   "You collected 1 item.": "1 kanıt topladın.",
   "Rate 1 more goal.": "1 hedef daha derecelendir.",
-  "1 goal": "1 hedef"
+  "1 goal": "1 hedef",
+  "Today on offer": "Bugün incelenebilecekler",
+  "Evidence list": "Kanıt listesi",
+  "Hide": "Gizle",
+  "Click a row or a glowing desk. Each one costs time from your day.": "Bir satıra ya da parlayan bir masaya tıkla. Her biri gününden zaman alır.",
+  "Document": "Belge",
+  "Interview": "Görüşme",
+  "Activity": "Etkinlik",
+  "In your bag · click to read": "Çantanda · okumak için tıkla"
  },
  "templates": [
   [
@@ -44,6 +52,10 @@ export default {
   [
    "Rate {0} more goals.",
    "{0} hedef daha derecelendir."
+  ],
+  [
+   "Show ({0} of {1})",
+   "Göster ({0}/{1})"
   ]
  ]
 };

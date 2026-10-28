@@ -11,11 +11,13 @@ import {
 import {
   documentScene, trapScene, interviewScene, unbookedScene, outageScene, stageOutage, endOutage,
 } from './ch02-scenes.js';
+import { createEvidenceList } from './ch02-list.js';
+import { worldOn } from './kit.js';
 
 const DAY_START_MIN = 9 * 60;
 const LOW_TIME_MIN = 45;
 
-const st = { token: 0, busy: false, outageOpen: false, alarmOn: false };
+const st = { token: 0, busy: false, outageOpen: false, alarmOn: false, list: null };
 
 export const meta = Object.freeze({
   step: 2,
@@ -40,6 +42,8 @@ function stage(ctx, state) {
   ctx.world.setHotspots(collectHotspots(state), (id) => onPick(ctx, id));
   ctx.world.setClock(DAY_START_MIN + minutesSpent(state.collect.collected, state.collect.outage));
   ctx.pointTo(st.busy ? null : suggestedAnchor(state));
+  st.list?.setHidden(st.busy);
+  st.list?.render(state);
   if (state.collect.outage) {
     const left = minutesLeft(state);
     ctx.cta({
@@ -65,6 +69,7 @@ async function run(ctx, scene) {
   const my = st.token;
   const alive = () => my === st.token;
   ctx.pointTo(null);
+  st.list?.setHidden(true);
   try {
     await scene(alive);
   } finally {
@@ -142,6 +147,8 @@ export function enter(ctx) {
   ctx.world.setMode('explore');
   ctx.world.setView('overview');
   ctx.world.setMood('evening');
+  // Without the world the dossier's Collect screen already lists everything.
+  if (worldOn(ctx)) st.list = createEvidenceList({ onPick: (id) => onPick(ctx, id) });
   stage(ctx, state);
   ctx.mentor(2).then(() => {
     if (my === st.token && !st.busy && isOutagePending(ctx.store.get())) startAlarm(ctx);
@@ -162,6 +169,8 @@ export function update(state, ctx) {
 
 export function exit(ctx) {
   st.token += 1;
+  st.list?.remove();
+  st.list = null;
   st.busy = false;
   st.outageOpen = false;
   st.alarmOn = false;

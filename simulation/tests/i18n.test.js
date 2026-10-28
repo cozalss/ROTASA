@@ -25,7 +25,7 @@ test('exact strings translate and keep surrounding whitespace', () => {
 test('templates translate and may reorder their captured values', () => {
   useLanguage('tr');
   assert.equal(translate('Chapter 3 / 7'), 'Bölüm 3 / 7');
-  assert.equal(translate('2 h left this evening'), 'akşam için 2 h kaldı');
+  assert.equal(translate('2 h left this evening'), 'akşam için 2 sa kaldı');
 });
 
 test('glued sentences, separators and quotes translate piece by piece', () => {
@@ -66,6 +66,7 @@ test('money amounts use Turkish digit grouping', () => {
   useLanguage('tr');
   assert.equal(translate('Expert: 210 h · TRY 150,000'), 'Uzman: 210 sa · 150.000 TL');
   assert.equal(translate('TRY 30,000'), '30.000 TL');
+  assert.equal(translate('5 h 40 min'), '5 sa 40 dk');
   assert.equal(translate('50,000 / 150,000 TRY'), '50.000 / 150.000 TL');
 });
 

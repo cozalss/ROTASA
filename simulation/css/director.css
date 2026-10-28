@@ -348,3 +348,16 @@ html[data-motion="reduce"] body.is-game .app-shell { transition: none; }
   .gd-board { left: 12px; right: 12px; width: auto; max-height: 52dvh; }
   .gd-cta { bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ---------- chapter 2 evidence list (shares the booking board look) ---------- */
+.gd-list { width: min(320px, calc(100vw - 32px)); padding-bottom: 10px; }
+.gd-list-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.gd-list-toggle { flex: none; padding: 7px 12px; font-size: 0.75rem; }
+.gd-list.is-folded { padding-bottom: 14px; }
+.gd-list .gd-board-check { width: 28px; height: 28px; font-size: 0.625rem; color: var(--g-ink-soft); }
+.gd-list .is-booked .gd-board-check { color: #1a0d03; font-size: 0.75rem; }
+.gd-list .gd-board-person { grid-template-columns: 28px minmax(0, 1fr) auto; padding: 6px 10px; }
+.gd-list .gd-board-name { font-size: 0.875rem; line-height: 1.3; }
+@media (max-width: 760px) {
+  .gd-list.is-folded { right: auto; width: auto; }
+}

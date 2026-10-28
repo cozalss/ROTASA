@@ -315,8 +315,6 @@ export default {
   "You are the external assessor. Rotaşa’s CTO wants to know how far the company is from TMMi Level 2. ": "Dış değerlendirici sensin. Rotaşa’nın CTO’su şirketin TMMi Seviye 2’ye ne kadar uzak olduğunu bilmek istiyor. ",
   "You have one day on site, then the findings meeting.": "Sahada bir günün var, ardından bulgular toplantısı gelir.",
   "Team": "Ekip",
-  "Team ___": "Ekip ___",
-  "Add your names here": "Adlarınızı buraya ekleyin",
   "Case": "Vaka",
   "Rotaşa Technology case pack, provided by the course. Rotaşa and every person in it are fictional.": "Dersin sağladığı Rotaşa Technology vaka paketi. Rotaşa ve içindeki herkes kurgusaldır.",
   "Built with": "Kullanılanlar",

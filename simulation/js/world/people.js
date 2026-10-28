@@ -8,6 +8,8 @@ import { renderPortrait } from './portrait.js';
 import { prefersReducedMotion } from '../fx/motion.js';
 
 const WALK_SPEED = 2.2;
+// Extra time a walk may take before the walker is placed at the goal.
+const WALK_GRACE_MS = 1500;
 const TURN_RATE = 9;
 
 // Colours here are literal (they also feed the CSS avatar fallback in the dialogue box).
@@ -137,7 +139,23 @@ export function createCast(THREE, scene, { shadowTex }) {
     if (spot.seated) m.endYaw = facing != null ? m.endYaw : spot.yaw;
     m.anim.setSeated(false);
     m.anim.setState('walking');
-    return new Promise((resolve) => { m.resolve = resolve; });
+    const limitMs = (pathLength(m.rig.root.position, m.path) / WALK_SPEED) * 1000 + WALK_GRACE_MS;
+    return new Promise((resolve) => {
+      m.resolve = resolve;
+      // On a slow machine (a few frames a second) the game must not wait for
+      // the walk: past the expected time the walker is placed at the goal.
+      setTimeout(() => { if (m.resolve === resolve) finishWalk(m); }, limitMs);
+    });
+  }
+
+  function pathLength(start, points) {
+    let length = 0;
+    let prev = start;
+    for (const p of points) {
+      length += Math.hypot(p.x - prev.x, p.z - prev.z);
+      prev = p;
+    }
+    return length;
   }
 
   function resolveFacing(facing, spot, m) {

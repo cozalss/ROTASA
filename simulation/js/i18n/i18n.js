@@ -188,9 +188,12 @@ function longestRun(parts, start, level) {
   return null;
 }
 
-// Money and large numbers in Turkish: "TRY 150,000" -> "150.000 TL".
+// Money, large numbers and durations in Turkish: "TRY 150,000" -> "150.000 TL",
+// "5 h 40 min" -> "5 sa 40 dk".
 function localizeNumbers(text) {
   return text
+    .replace(/(\d) h\b/g, '$1 sa')
+    .replace(/(\d) min\b/g, '$1 dk')
     .replace(/\bTRY\s*(\d[\d,]*)/g, '$1 TL')
     .replace(/(\d[\d,]*)\s*TRY\b/g, '$1 TL')
     .replace(/\b\d{1,3}(?:,\d{3})+\b/g, (n) => n.replace(/,/g, '.'));
