@@ -1,0 +1,8 @@
+# Course materials stay local (not ours to publish)
+*.pdf
+*.docx
+# Local tooling output
+.playwright-mcp/
+node_modules/
+coverage/
+*.log

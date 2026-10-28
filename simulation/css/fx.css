@@ -1,0 +1,86 @@
+/* ---------- ambient route network behind the page ---------- */
+.ambient-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .ambient-canvas { opacity: 0.22; } }
+:root[data-theme="light"] .ambient-canvas { opacity: 0.22; }
+.app-shell { position: relative; z-index: 1; }
+
+/* ---------- truck on the process map ---------- */
+.route::after { width: calc((100% - 100% / 7) * var(--progress) / 100); }
+.truck-lane {
+  position: absolute;
+  left: calc(100% / 14);
+  right: calc(100% / 14);
+  top: -12px;
+  height: 0;
+  pointer-events: none;
+}
+.route-truck {
+  position: absolute;
+  left: calc(var(--progress) * 1%);
+  transform: translateX(-50%);
+  transition: left 900ms var(--ease);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+.route-truck svg { display: block; animation: truck-bob 1.4s ease-in-out infinite; }
+.truck-body { fill: var(--player); }
+.truck-cab { fill: #ffb27a; }
+.truck-wheel { fill: #0d1a2b; stroke: #8fa3b8; stroke-width: 1; }
+@keyframes truck-bob { 50% { transform: translateY(-1px); } }
+body[data-step="0"] .route-truck { opacity: 0; }
+
+/* ---------- "filed" stamp on locked decisions ---------- */
+.verdict-filed { position: relative; padding-right: 128px; overflow: clip; }
+.stamp {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font: 800 0.8125rem/1 var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 9px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(-6deg);
+  opacity: 0.85;
+}
+.verdict.good .stamp { color: var(--good); }
+.verdict.warn .stamp { color: var(--warn); }
+.verdict-filed.is-new .stamp { animation: stamp-in 420ms cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+@keyframes stamp-in {
+  from { transform: rotate(-14deg) scale(2.2); opacity: 0; }
+  to { transform: rotate(-6deg) scale(1); opacity: 0.85; }
+}
+@media (max-width: 520px) {
+  .verdict-filed { padding-right: 14px; padding-top: 40px; }
+}
+
+/* ---------- radar chart ---------- */
+.radar-wrap { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.radar { width: 100%; max-width: 360px; height: auto; overflow: visible; }
+.radar-ring { fill: none; stroke: var(--line); stroke-width: 1; }
+.radar-ring-label { font: 600 10px var(--font-mono); fill: var(--ink-soft); }
+.radar-spoke { stroke: var(--line); stroke-width: 1; }
+.radar-label { font: 700 12px var(--font-mono); fill: var(--ink); }
+.radar-player { fill: color-mix(in srgb, var(--player) 22%, transparent); stroke: var(--player); stroke-width: 2.5; stroke-linejoin: round; }
+.radar-expert { fill: color-mix(in srgb, var(--expert) 18%, transparent); stroke: var(--expert); stroke-width: 2; stroke-dasharray: 6 4; stroke-linejoin: round; }
+.radar-dot-player { fill: var(--player); }
+.radar-dot-expert { fill: var(--expert); }
+.radar-legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: var(--step--1); color: var(--ink-soft); }
+.radar-key { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
+.radar-key i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.radar-key-player { background: var(--player); }
+.radar-key-expert { background: var(--expert); }
+.is-new .radar-player, .is-new .radar-expert { transform-box: view-box; transform-origin: 160px 160px; animation: radar-grow 700ms var(--ease) both; }
+@keyframes radar-grow { from { transform: scale(0.2); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .route-truck svg { animation: none; }
+}

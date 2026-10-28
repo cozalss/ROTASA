@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Demo</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/world.css">
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: var(--night); color: var(--night-ink); font: 400 13px/1.4 var(--font-body); }
+  .demo-panel {
+    position: fixed; top: 12px; right: 12px; bottom: 12px; z-index: 10; width: 300px; overflow: auto;
+    padding: 12px 14px; border-radius: var(--radius-m);
+    background: color-mix(in srgb, var(--night) 86%, transparent); border: 1px solid #26394f;
+  }
+  .demo-panel h2 { font: 800 15px/1.2 var(--font-display); letter-spacing: 0.04em; text-transform: uppercase; margin: 12px 0 6px; color: #9fb0c3; }
+  .demo-panel h2:first-child { margin-top: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .row button, .row select {
+    font: 600 11px/1 var(--font-mono); color: var(--night-ink); background: #17283d; border: 1px solid #26394f;
+    border-radius: 4px; padding: 6px 7px; cursor: pointer;
+  }
+  .row button:hover { border-color: #ff8a3d; }
+  .row button[aria-pressed="true"] { background: #3b2414; border-color: #ff8a3d; }
+  .portraits { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .portraits figure { margin: 0; text-align: center; font: 400 10px/1.2 var(--font-mono); color: #9fb0c3; }
+  .portraits img, .portraits .ph { width: 100%; aspect-ratio: 1; border-radius: 6px; display: block; background: #17283d; }
+  .status { font: 400 11px/1.4 var(--font-mono); color: #9fb0c3; white-space: pre-wrap; }
+  .demo-panel.collapsed { width: auto; bottom: auto; }
+  .demo-panel.collapsed > :not(.toggle) { display: none; }
+</style>
+</head>
+<body>
+<div id="world-layer" class="world-layer"></div>
+
+<aside class="demo-panel" id="panel" aria-label="World demo controls">
+  <div class="row toggle"><button type="button" id="collapse">Hide panel</button></div>
+  <h2>Status</h2>
+  <p class="status" id="status">loading…</p>
+  <h2>Mode</h2>
+  <div class="row" id="modes"></div>
+  <h2>Quality</h2>
+  <div class="row" id="quality"></div>
+  <h2>Motion</h2>
+  <div class="row" id="motion"></div>
+  <div class="row"><button type="button" id="stats">Stats</button></div>
+  <h2>View</h2>
+  <div class="row" id="views"></div>
+  <h2>Mood</h2>
+  <div class="row" id="moods"></div>
+  <h2>Walk the assessor</h2>
+  <div class="row" id="walks"></div>
+  <h2>People</h2>
+  <div class="row">
+    <select id="who"></select>
+    <select id="pstate"><option>idle</option><option>typing</option><option>talking</option><option>stressed</option><option>away</option></select>
+    <button type="button" id="apply-state">Set state</button>
+    <button type="button" id="to-meeting">To meeting</button>
+    <button type="button" id="go-home">Home</button>
+    <button type="button" id="say">Say</button>
+  </div>
+  <h2>Clock</h2>
+  <div class="row"><button type="button" data-clock="21:40">21:40</button><button type="button" data-clock="23:55">23:55</button><button type="button" data-clock="01:30">01:30</button></div>
+  <h2>Portraits</h2>
+  <div class="portraits" id="portraits"></div>
+</aside>
+
+<script>
+  // ?nothree=1 tests the fallback path: the world must report unavailable and never throw.
+  window.__noThree = new URLSearchParams(location.search).has('nothree');
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SMAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/VignetteShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/OutlinePass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SMAAPass.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>if (window.__noThree) delete window.THREE;</script>
+<script type="module">
+  import { getWorld } from './js/world/world.js';
+  import { PEOPLE, getPortrait } from './js/world/people.js';
+  import { ANCHORS, VIEWS } from './js/world/anchors.js';
+
+  const world = getWorld();
+  window.__world = world;
+  const $ = (id) => document.getElementById(id);
+  const status = $('status');
+  const log = [];
+  const say = (msg) => { log.unshift(msg); status.textContent = log.slice(0, 6).join('\n'); };
+
+  const HOTSPOTS = [
+    { id: 'doc-A', anchor: 'wiki-terminal', label: 'Wiki terminal', sublabel: 'Document A · 20 min', kind: 'document', state: 'available' },
+    { id: 'doc-B', anchor: 'plan-folder', label: 'Test plan binder', sublabel: 'Document B · 30 min', kind: 'document', state: 'done' },
+    { id: 'doc-C', anchor: 'test-tool', label: 'Test tool kiosk', sublabel: 'Document C · 40 min', kind: 'document', state: 'available' },
+    { id: 'doc-D', anchor: 'jira-board', label: 'Kanban board', sublabel: 'Document D · 35 min', kind: 'document', state: 'available' },
+    { id: 'doc-E', anchor: 'metrics-board', label: 'Metrics chart', sublabel: 'Document E · 35 min', kind: 'document', state: 'available' },
+    { id: 'doc-F', anchor: 'pipeline-screen', label: 'CI pipeline screen', sublabel: 'Document F · 40 min', kind: 'document', state: 'available' },
+    { id: 'doc-G', anchor: 'mail-terminal', label: 'Mail terminal', sublabel: 'Document G · 15 min', kind: 'document', state: 'locked' },
+    { id: 'doc-J', anchor: 'hr-cabinet', label: 'HR cabinet', sublabel: 'Document J · 30 min', kind: 'document', state: 'available' },
+    { id: 'trap-T1', anchor: 'code-desk', label: 'Routing source code', sublabel: '60 min', kind: 'trap', state: 'available' },
+    { id: 'trap-T2', anchor: 'staging-console', label: 'Staging console', sublabel: '90 min', kind: 'trap', state: 'available' },
+    { id: 'p-murat', anchor: 'cto-office', label: 'Murat Kaya', sublabel: 'CTO', kind: 'person', state: 'available' },
+    { id: 'p-deniz', anchor: 'qa-desk', label: 'Deniz Arslan', sublabel: 'QA lead', kind: 'person', state: 'available' },
+    { id: 'p-ece', anchor: 'routing-desk', label: 'Ece Yılmaz', sublabel: 'Developer, Routing', kind: 'person', state: 'available' },
+    { id: 'p-onur', anchor: 'field-desk', label: 'Onur Kılıç', sublabel: 'Test engineer, Field', kind: 'person', state: 'available' },
+    { id: 'p-burak', anchor: 'devops-corner', label: 'Burak Şahin', sublabel: 'DevOps', kind: 'person', state: 'available' },
+    { id: 'p-po', anchor: 'po-desk', label: 'Kerem & Aylin', sublabel: 'Product owners', kind: 'person', state: 'available' },
+    { id: 'ev-outage', anchor: 'server-room', label: 'Staging outage', sublabel: 'Observe the recovery', kind: 'event', state: 'available' },
+    { id: 'war', anchor: 'war-room', label: 'War room', sublabel: 'Your evidence board', kind: 'document', state: 'available' },
+    { id: 'meet', anchor: 'meeting-room', label: 'Meeting room', kind: 'document', state: 'available' },
+    { id: 'exit', anchor: 'entrance', label: 'Leave for the day', kind: 'exit', state: 'available' },
+    { id: 'hidden', anchor: 'integration-desk', label: 'Hidden', kind: 'document', state: 'hidden' },
+  ];
+
+  function buttons(host, items, onClick, group) {
+    items.forEach((item) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = item;
+      b.dataset.value = item;
+      if (group) b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        if (group) host.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        onClick(item);
+      });
+      host.append(b);
+    });
+  }
+
+  // ?adaptive=0 keeps every effect on (screenshots on slow/headless GPUs).
+  if (new URLSearchParams(location.search).get('adaptive') === '0') world.setAdaptive(false);
+  world.mount($('world-layer'));
+  world.onReady(() => say(`ready · available=${world.isAvailable()} · quality=${world.getQuality()}`));
+  world.setMode('explore');
+  world.setMood('evening');
+  world.setView('overview', { instant: true });
+  world.setHotspots(HOTSPOTS, (id) => {
+    say(`picked ${id}`);
+    const h = HOTSPOTS.find((x) => x.id === id);
+    if (h) world.walkTo(h.anchor).then(() => say(`arrived at ${h.anchor}`));
+  });
+
+  buttons($('modes'), ['explore', 'backdrop', 'off'], (m) => world.setMode(m), true);
+  buttons($('quality'), ['high', 'low'], (q) => { world.setQuality(q); say(`quality ${world.getQuality()}`); }, true);
+  buttons($('motion'), ['full', 'reduce'], (m) => { document.documentElement.dataset.motion = m; say(`motion ${m}`); }, true);
+  $('stats').addEventListener('click', () => {
+    const st = world.getStats();
+    if (!st) return say('no stats');
+    say(`tier ${st.tier} · ssao ${st.ssao} · tilt ${st.tiltShift} · bloom ×${st.bloomScale} · ibl ${st.ibl} · rain ${st.rain}\navg ${st.avgFrameMs} ms · extras ${st.extras} · calls ${st.calls}`);
+  });
+  buttons($('views'), Object.keys(VIEWS), (v) => world.setView(v), true);
+  buttons($('moods'), ['evening', 'outage', 'after-good', 'after-bad'], (m) => world.setMood(m), true);
+  buttons($('walks'), Object.keys(ANCHORS), (a) => { say(`walking to ${a}`); world.walkTo(a).then(() => say(`arrived at ${a}`)); });
+
+  Object.values(PEOPLE).forEach((p) => {
+    const o = document.createElement('option');
+    o.value = p.id;
+    o.textContent = p.name;
+    $('who').append(o);
+  });
+  $('apply-state').addEventListener('click', () => world.setPerson($('who').value, { state: $('pstate').value }));
+  $('to-meeting').addEventListener('click', () => world.setPerson($('who').value, { anchor: 'meeting-room', state: 'talking' }).then(() => say('arrived in meeting room')));
+  $('go-home').addEventListener('click', () => { const p = PEOPLE[$('who').value]; world.setPerson(p.id, { anchor: p.home, state: p.state }); });
+  $('say').addEventListener('click', () => world.say($('who').value, 'Staging is mine until the release. Please ask before you deploy anything.'));
+  document.querySelectorAll('[data-clock]').forEach((b) => b.addEventListener('click', () => world.setClock(b.dataset.clock)));
+  $('collapse').addEventListener('click', () => {
+    const c = $('panel').classList.toggle('collapsed');
+    $('collapse').textContent = c ? 'Show panel' : 'Hide panel';
+  });
+
+  Object.values(PEOPLE).forEach((p) => {
+    const fig = document.createElement('figure');
+    const ph = document.createElement('div');
+    ph.className = 'ph';
+    const cap = document.createElement('figcaption');
+    cap.textContent = p.name;
+    fig.append(ph, cap);
+    $('portraits').append(fig);
+    getPortrait(p.id).then((url) => {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = `${p.name}, ${p.role}`;
+      ph.replaceWith(img);
+    }).catch((err) => { cap.textContent = `${p.name} (fallback: ${err.message})`; });
+  });
+</script>
+</body>
+</html>

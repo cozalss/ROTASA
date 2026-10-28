@@ -1,0 +1,10 @@
+node_modules
+tests
+tools
+coverage
+*.log
+*-demo.html
+docs
+README.md
+package.json
+.playwright-mcp

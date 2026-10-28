@@ -1,0 +1,99 @@
+/* Layout concept: an assessor's dispatch desk. The process map is a delivery
+   route with seven stops; the stage is the open case file; the right rail is
+   the clipboard (time window, evidence bag, designer notes).
+   Colour logic: the player's path is signal orange, the expert's path is
+   route teal, so the two paths stay distinguishable on every screen. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --ink: #142233;
+  --ink-soft: #4a5a6c;
+  --line: #d3dae2;
+  --player: #d9620f;
+  --player-soft: #fbe7d6;
+  --expert: #0f7a72;
+  --expert-soft: #d7efec;
+  --night: #0d1a2b;
+  --night-ink: #e6edf5;
+  --good: #2c7a3f;
+  --good-soft: #dff0e2;
+  --warn: #a86b00;
+  --warn-soft: #fbefd2;
+  --bad: #b3261e;
+  --bad-soft: #f8dcd9;
+  --note: #8a6d00;
+  --note-soft: #fff6c7;
+  --focus: #2563eb;
+  --shadow: 0 1px 2px rgba(20, 34, 51, 0.06), 0 8px 24px rgba(20, 34, 51, 0.06);
+
+  --font-display: 'Big Shoulders Display', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --font-body: 'Public Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+
+  --step--1: 0.875rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.125rem;
+  --step-2: 1.5rem;
+  --step-3: 2.25rem;
+  --step-4: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 220ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1522;
+    --surface: #122033;
+    --surface-2: #17283d;
+    --ink: #e6edf5;
+    --ink-soft: #9fb0c3;
+    --line: #26394f;
+    --player: #ff8a3d;
+    --player-soft: #3b2414;
+    --expert: #3cc4b8;
+    --expert-soft: #12322f;
+    --night: #060d17;
+    --night-ink: #e6edf5;
+    --good: #6fcf86;
+    --good-soft: #15301c;
+    --warn: #f0b94a;
+    --warn-soft: #33270c;
+    --bad: #ff8a80;
+    --bad-soft: #3a1714;
+    --note: #f2d35b;
+    --note-soft: #2e2810;
+    --focus: #7aa7ff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b1522;
+  --surface: #122033;
+  --surface-2: #17283d;
+  --ink: #e6edf5;
+  --ink-soft: #9fb0c3;
+  --line: #26394f;
+  --player: #ff8a3d;
+  --player-soft: #3b2414;
+  --expert: #3cc4b8;
+  --expert-soft: #12322f;
+  --night: #060d17;
+  --night-ink: #e6edf5;
+  --good: #6fcf86;
+  --good-soft: #15301c;
+  --warn: #f0b94a;
+  --warn-soft: #33270c;
+  --bad: #ff8a80;
+  --bad-soft: #3a1714;
+  --note: #f2d35b;
+  --note-soft: #2e2810;
+  --focus: #7aa7ff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}

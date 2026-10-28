@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1a2b">
+<title>Game UI Harness</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230d1a2b%27/%3E%3Crect x=%274%27 y=%2710%27 width=%2715%27 height=%2710%27 rx=%271.5%27 fill=%27%23ff8a3d%27/%3E%3Cpath d=%27M19 13h5l4 4v3h-9z%27 fill=%27%23ffb27a%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/game.css">
+<style>
+  /* Harness only: a stand-in for the 3D office so the overlays read in context. */
+  html, body { margin: 0; height: 100%; }
+  body { background: #060d17; color: #e6edf5; font-family: var(--font-body); overflow: hidden; }
+  .fake-world {
+    position: fixed; inset: 0; overflow: hidden;
+    background: radial-gradient(80% 60% at 50% 55%, #1a3150 0%, #0b1626 60%, #050a12 100%);
+  }
+  .fake-floor {
+    position: absolute; left: 50%; top: 58%; width: 1400px; height: 1400px;
+    transform: translate(-50%, -50%) rotateX(60deg) rotateZ(45deg);
+    background:
+      linear-gradient(rgba(143, 163, 184, 0.13) 1px, transparent 1px) 0 0 / 70px 70px,
+      linear-gradient(90deg, rgba(143, 163, 184, 0.13) 1px, transparent 1px) 0 0 / 70px 70px;
+    mask-image: radial-gradient(circle, #000 25%, transparent 62%);
+  }
+  .fake-desk {
+    position: absolute; width: 120px; height: 56px; border-radius: 6px;
+    background: linear-gradient(180deg, #2a4466, #172a42);
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transform: skewY(-12deg);
+  }
+  .fake-desk::after {
+    content: ''; position: absolute; left: 30px; top: -26px; width: 44px; height: 30px; border-radius: 3px;
+    background: linear-gradient(180deg, #7aa7ff55, #3cc4b833); box-shadow: 0 0 24px #3cc4b855;
+  }
+  .demo-panel {
+    position: fixed; left: 16px; top: 50%; transform: translateY(-50%); z-index: 35;
+    display: grid; gap: 8px; width: 220px; padding: 14px;
+    background: rgba(10, 20, 35, 0.8); border: 1px solid rgba(143, 163, 184, 0.25); border-radius: 6px;
+  }
+  .demo-panel p { margin: 0 0 4px; font: 600 0.6875rem/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: #ff8a3d; }
+  .demo-panel button {
+    font: 600 0.8125rem/1.2 var(--font-body); text-align: left; padding: 9px 12px; cursor: pointer;
+    color: #e6edf5; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(143, 163, 184, 0.3); border-radius: 4px;
+  }
+  .demo-panel button:hover { border-color: #ff8a3d; }
+  @media (max-width: 640px) {
+    .demo-panel { top: auto; bottom: 16px; transform: none; width: auto; right: 16px; grid-template-columns: 1fr 1fr; }
+    .demo-panel p { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="fake-world" aria-hidden="true">
+  <div class="fake-floor"></div>
+  <div class="fake-desk" style="left: 30%; top: 46%"></div>
+  <div class="fake-desk" style="left: 52%; top: 40%"></div>
+  <div class="fake-desk" style="left: 62%; top: 58%"></div>
+  <div class="fake-desk" style="left: 40%; top: 62%"></div>
+</div>
+
+<div id="hud-slot"></div>
+
+<nav class="demo-panel" aria-label="Harness controls">
+  <p>Harness</p>
+  <button type="button" id="demo-talk">Talk to the CTO</button>
+  <button type="button" id="demo-chapter">Chapter card</button>
+  <button type="button" id="demo-toast">Toasts</button>
+  <button type="button" id="demo-collect">Collect evidence</button>
+  <button type="button" id="demo-narrator">Narrator line</button>
+</nav>
+
+<div id="game-ui"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script type="module">
+  import { createInitialState, goToStep, patchSlice } from './js/store.js';
+  import { openDialogue } from './js/game/dialogue.js';
+  import { renderHud } from './js/game/hud.js';
+  import { showChapter } from './js/game/chapter.js';
+  import { toast } from './js/game/toast.js';
+  import { audio } from './js/game/audio.js';
+
+  const POOL = ['C', 'D', 'E', 'G', 'J', 'F'];
+  let state = goToStep(createInitialState(), 2);
+  state = patchSlice(state, 'plan', { scope: 'level2', type: 'informal', interviews: ['deniz', 'burak'] });
+  state = patchSlice(state, 'collect', { collected: ['A', 'B', 'H2'] });
+
+  const slot = document.getElementById('hud-slot');
+  const handlers = {
+    onOpenBag: () => toast(`Your bag holds ${state.collect.collected.length + 1} items.`, 'info'),
+    onOpenDossier: () => toast('The dossier would open here.', 'expert'),
+    onToggleSound: () => {
+      if (audio.isOn()) audio.disable();
+      else { audio.enable(); audio.ambience('office'); audio.ui('click'); }
+      paintHud();
+    },
+  };
+  function paintHud() { slot.replaceChildren(renderHud(state, handlers)); }
+
+  function talk() {
+    openDialogue({
+      speaker: 'murat',
+      lines: [
+        'Thanks for coming in. Our biggest customer sent a supplier questionnaire, and one line asks for our TMMi level.',
+        'We automated a lot this year. Over two thousand tests run every night.',
+        'I think if we increase automation, Level 2 will follow.',
+      ],
+      choices: [
+        { id: 'level2', label: '"Level 2 is staged. I need all six process areas, across all three teams."', meta: 'Scope' },
+        { id: 'automation', label: '"Fine. I will focus on automation."', meta: '−60 min' },
+        { id: 'certify', label: '"I can certify you at Level 2 by Friday."', disabled: true, note: 'An informal assessment cannot produce a formal rating.' },
+      ],
+      onChoose: (id) => {
+        audio.ui('stamp');
+        toast(id === 'level2' ? 'Scope agreed: all Level 2 process areas.' : 'Scope noted: automation only.', id === 'level2' ? 'good' : 'warn');
+        openDialogue({ speaker: 'murat', lines: [id === 'level2' ? 'All six? Fine. Deniz will find you a desk.' : 'Good. Burak will show you the pipeline.'] });
+      },
+    });
+  }
+
+  function collect() {
+    const next = POOL.find((id) => !state.collect.collected.includes(id));
+    if (!next) { toast('Nothing left to collect in this harness.', 'warn'); return; }
+    state = patchSlice(state, 'collect', { collected: [...state.collect.collected, next] });
+    audio.ui('pick');
+    toast(`Document ${next} added to your bag`, 'player');
+    paintHud();
+  }
+
+  document.getElementById('demo-talk').addEventListener('click', talk);
+  document.getElementById('demo-chapter').addEventListener('click', () => {
+    showChapter({ number: 2, title: 'Collect evidence', subtitle: 'One day on site. Five hours and forty minutes. Choose what you look at.' })
+      .then(() => toast('Chapter card dismissed.', 'info'));
+  });
+  document.getElementById('demo-toast').addEventListener('click', () => {
+    toast('Document B added to your bag', 'player');
+    setTimeout(() => toast('Staging is down. The teams are scrambling.', 'bad'), 300);
+    setTimeout(() => toast('Interview with Deniz booked for 14:00.', 'good'), 600);
+  });
+  document.getElementById('demo-collect').addEventListener('click', collect);
+  document.getElementById('demo-narrator').addEventListener('click', () => {
+    openDialogue({ speaker: 'narrator', lines: ['The office smells of burnt coffee. Somewhere a pager goes off.'] });
+  });
+
+  paintHud();
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chapters Demo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230d1a2b%27/%3E%3Crect x=%274%27 y=%2710%27 width=%2715%27 height=%2710%27 rx=%271.5%27 fill=%27%23ff8a3d%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/screens-a.css">
+<link rel="stylesheet" href="css/screens-b.css">
+<link rel="stylesheet" href="css/screens-c.css">
+<link rel="stylesheet" href="css/fx.css">
+<link rel="stylesheet" href="css/world.css">
+<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/shell.css">
+<link rel="stylesheet" href="css/mentor.css">
+<link rel="stylesheet" href="css/recap.css">
+<style>
+  /* Harness only: a minimal dossier sheet and a control strip. */
+  body { margin: 0; background: #060d17; }
+  .app-shell {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 20;
+    width: min(980px, 100vw); overflow-y: auto;
+    background: var(--bg); color: var(--ink);
+    box-shadow: -18px 0 48px rgba(0, 0, 0, 0.45);
+    transform: translateX(105%); visibility: hidden;
+    transition: transform 320ms var(--ease), visibility 0s linear 320ms;
+  }
+  body.dossier-open .app-shell { transform: none; visibility: visible; transition: transform 320ms var(--ease); }
+  .gd-dossier-head { padding: 16px 24px 0; }
+  .gd-dossier-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .gd-dossier-kicker { margin: 0; font: 600 0.7rem/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--player); }
+  .gd-dossier-title { margin: 2px 0; font: 800 1.8rem/1 var(--font-display); text-transform: uppercase; }
+  .gd-dossier-obj { margin: 0; color: var(--ink-soft); }
+  .gd-dossier-tools { display: flex; gap: 8px; align-items: center; }
+  .gd-btn { min-height: 36px; padding: 0 12px; font: 600 0.85rem/1 var(--font-body); border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .gd-btn-primary { background: var(--player); border-color: var(--player); color: #fff; }
+  #stage { padding: 0 24px 40px; }
+  .hx {
+    position: fixed; left: 12px; top: 50%; transform: translateY(-50%); z-index: 33;
+    display: flex; flex-direction: column; gap: 6px; padding: 10px;
+    background: rgba(6, 13, 23, 0.86); border: 1px solid #26394f; border-radius: 8px;
+    font: 600 11px/1.2 var(--font-mono); color: #9fb0c3;
+  }
+  .hx button, .hx select { font: 600 11px/1 var(--font-mono); color: #e6edf5; background: #17283d; border: 1px solid #26394f; border-radius: 4px; padding: 6px 7px; cursor: pointer; }
+  .hx button[aria-pressed="true"] { background: #3b2414; border-color: #ff8a3d; }
+  .hx .row { display: flex; gap: 4px; flex-wrap: wrap; max-width: 150px; }
+  .hx-obj { position: fixed; left: 50%; top: 10px; transform: translateX(-50%); z-index: 31; max-width: calc(100vw - 32px);
+    padding: 8px 14px; border-radius: 6px; background: rgba(10, 20, 35, 0.85); color: #e6edf5; border-left: 3px solid #ff8a3d;
+    font: 400 0.85rem/1.3 var(--font-body); }
+  .hx.is-min > :not(.hx-toggle) { display: none; }
+  @media (max-width: 600px) { .hx { top: auto; bottom: 84px; transform: none; } .hx-obj { top: 6px; font-size: 0.75rem; } }
+</style>
+</head>
+<body class="is-game">
+<div id="world-layer" class="world-layer"></div>
+
+<div class="app-shell" aria-label="Dossier" inert>
+  <header id="dossier-head" class="gd-dossier-head"></header>
+  <main id="stage" class="stage" tabindex="-1"></main>
+</div>
+<div id="doc-viewer" class="doc-viewer" hidden></div>
+
+<p class="hx-obj" id="hx-obj" aria-live="polite">Loading…</p>
+<aside class="hx" id="hx" aria-label="Harness controls">
+  <button type="button" class="hx-toggle" id="hx-min">Hide</button>
+  <span>Chapter</span>
+  <div class="row" id="hx-ch"></div>
+  <span>Route</span>
+  <select id="hx-variant" aria-label="Route"><option value="expert">Expert</option><option value="rookie">Rookie</option></select>
+  <div class="row">
+    <button type="button" id="hx-help" aria-label="Selin's brief again">? Selin</button>
+    <button type="button" id="hx-gloss">Glossary</button>
+    <button type="button" id="hx-dossier">Dossier</button>
+    <button type="button" id="hx-reset">Reset tips</button>
+  </div>
+</aside>
+<div id="game-ui"></div>
+
+<script>window.__noThree = new URLSearchParams(location.search).has('nothree');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/SMAAShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/VignetteShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/OutlinePass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/SMAAPass.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>if (window.__noThree) delete window.THREE;</script>
+<script type="module">
+  // Test harness for chapters 3–7 (agent I2): a fake director with a fake state.
+  // ?ch=5&route=rookie picks the start; ?nothree=1 tests the no-WebGL path.
+  import { getWorld } from './js/world/world.js';
+  import { createStore, createInitialState, patchSlice, goToStep } from './js/store.js';
+  import { EXPERT } from './js/data/decisions.js';
+  import { expertRatings } from './js/logic/assessment.js';
+  import { createDossier } from './js/game/dossier.js';
+  import { SCREENS } from './js/game/screens.js';
+  import { openDialogue } from './js/game/dialogue.js';
+  import { toast } from './js/game/toast.js';
+  import { audio } from './js/game/audio.js';
+  import { renderDocument } from './js/ui/components.js';
+  import { findEvidence } from './js/data/evidence.js';
+  import * as M from './js/game/mentor.js';
+  import * as ch03 from './js/game/chapters/ch03.js';
+  import * as ch04 from './js/game/chapters/ch04.js';
+  import * as ch05 from './js/game/chapters/ch05.js';
+  import * as ch06 from './js/game/chapters/ch06.js';
+  import * as ch07 from './js/game/chapters/ch07.js';
+
+  const CHAPTERS = { 3: ch03, 4: ch04, 5: ch05, 6: ch06, 7: ch07 };
+  const LATER = { 3: ['assess', 'conclude', 'report', 'improve'], 4: ['conclude', 'report', 'improve'], 5: ['report', 'improve'], 6: ['improve'], 7: [] };
+  const ROOKIE = {
+    plan: { scope: 'level2', type: 'certificate', interviews: ['ece', 'onur'] },
+    collect: { collected: ['A', 'B', 'C', 'D', 'G', 'H3', 'T1'], outage: 'ignore' },
+    assess: { ratings: { ...expertRatings(), 'TPL-G5': 'L', 'TEV-G3': 'F', 'TMC-G1': '?' } },
+    conclude: { level: 'level2' },
+    report: { automation: 'principle', attribution: 'names', kvkk: null },
+    improve: { actions: ['envs', 'perf', 'dashboard'], first: 'envs' },
+  };
+
+  function stateFor(step, route) {
+    const init = createInitialState();
+    let s = init;
+    s = patchSlice(s, 'plan', { scope: EXPERT.scope, type: EXPERT.type, interviews: [...EXPERT.interviews] });
+    s = patchSlice(s, 'collect', { collected: [...EXPERT.collected], outage: EXPERT.outage });
+    s = patchSlice(s, 'assess', { ratings: expertRatings() });
+    s = patchSlice(s, 'conclude', { level: EXPERT.level, revealed: true });
+    s = patchSlice(s, 'report', { automation: EXPERT.automation, attribution: EXPERT.attribution, kvkk: EXPERT.kvkk,
+      automationText: 'Your own sheet: API tests 210 to 262, production defects did not fall, flaky tests up.',
+      revealed: { automation: true, attribution: true, kvkk: true } });
+    s = patchSlice(s, 'improve', { actions: [...EXPERT.actions], first: EXPERT.first, revealed: true });
+    if (route === 'rookie') Object.entries(ROOKIE).forEach(([slice, patch]) => { s = patchSlice(s, slice, patch); });
+    LATER[step].forEach((slice) => { s = patchSlice(s, slice, init[slice]); });
+    return goToStep(s, step);
+  }
+
+  const params = new URLSearchParams(location.search);
+  const world = getWorld();
+  world.mount(document.getElementById('world-layer'));
+  const store = createStore(stateFor(Number(params.get('ch')) || 3, params.get('route') || 'expert'));
+  const viewer = document.getElementById('doc-viewer');
+  const hx = { active: null, mode: 'explore', step: 0 };
+
+  function openDoc(id) {
+    const ev = findEvidence(id);
+    if (!ev) return;
+    const close = () => { viewer.hidden = true; viewer.replaceChildren(); };
+    viewer.replaceChildren(renderDocument(ev, close));
+    viewer.hidden = false;
+  }
+
+  const dossier = createDossier({
+    screens: SCREENS,
+    screenCtx: { update: (fn, o) => store.update(fn, o), go: (n) => enterChapter(n), openDoc, reset: () => {} },
+    objectiveOf: (s) => objective(s),
+    onGo: (n) => enterChapter(n),
+    onClose: () => closeDossier(),
+    onMenu: () => toast('Menu is the director’s job.', 'info'),
+    onRendered: (root) => M.decorate(root),
+  });
+
+  function openDossier() {
+    if (world.isAvailable()) world.setMode('backdrop');
+    dossier.open(store.get());
+  }
+  function closeDossier() {
+    dossier.close();
+    if (world.isAvailable()) world.setMode(hx.mode);
+  }
+
+  const worldProxy = { ...world, setMode(m) { hx.mode = m; if (!dossier.isOpen()) world.setMode(m); } };
+  const ctx = Object.freeze({
+    store: { get: store.get, update: store.update, subscribe: store.subscribe },
+    world: worldProxy,
+    go: (n) => enterChapter(n),
+    dossier: { open: openDossier, close: closeDossier, isOpen: () => dossier.isOpen() },
+    dialogue: openDialogue, toast, audio,
+    mentor: (step, o) => M.mentor(step, o),
+    tip: (id, text) => M.tip(id, text),
+    openDoc, pointTo: () => {}, refresh: () => paintObjective(),
+  });
+
+  function objective(s) {
+    return hx.active ? hx.active.meta.objective(s) : { text: '', done: 0, total: 0 };
+  }
+  function paintObjective() {
+    const o = objective(store.get());
+    document.getElementById('hx-obj').textContent = `Ch ${hx.step} · ${o.text}${o.total ? ` [${o.done}/${o.total}]` : ''}`;
+  }
+
+  function enterChapter(step) {
+    const mod = CHAPTERS[step];
+    if (!mod) return toast(`Chapter ${step} is the director’s (I1).`, 'info');
+    if (hx.active) hx.active.exit(ctx);
+    hx.active = null;
+    closeDossier();
+    store.replace(stateFor(step, document.getElementById('hx-variant').value));
+    hx.active = mod;
+    hx.step = step;
+    document.querySelectorAll('#hx-ch button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.ch) === step)));
+    mod.enter(ctx);
+    paintObjective();
+  }
+
+  store.subscribe((s) => {
+    dossier.render(s);
+    if (hx.active) hx.active.update(s, ctx);
+    paintObjective();
+  });
+
+  const chRow = document.getElementById('hx-ch');
+  [3, 4, 5, 6, 7].forEach((n) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = String(n); b.dataset.ch = String(n);
+    b.addEventListener('click', () => enterChapter(n));
+    chRow.append(b);
+  });
+  document.getElementById('hx-variant').value = params.get('route') || 'expert';
+  document.getElementById('hx-variant').addEventListener('change', () => enterChapter(hx.step));
+  document.getElementById('hx-help').addEventListener('click', () => M.mentor(hx.step, { force: true }));
+  document.getElementById('hx-gloss').addEventListener('click', () => M.showGlossary());
+  document.getElementById('hx-dossier').addEventListener('click', () => (dossier.isOpen() ? closeDossier() : openDossier()));
+  document.getElementById('hx-reset').addEventListener('click', () => { M.resetMentor(); toast('Briefs and tips reset.', 'info'); });
+  document.getElementById('hx-min').addEventListener('click', (e) => {
+    const min = document.getElementById('hx').classList.toggle('is-min');
+    e.currentTarget.textContent = min ? 'Show' : 'Hide';
+  });
+  window.__hx = { store, ctx, enterChapter, M, world };
+  world.onReady(() => enterChapter(Number(params.get('ch')) || 3));
+</script>
+</body>
+</html>

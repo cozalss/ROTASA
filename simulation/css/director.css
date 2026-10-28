@@ -1,0 +1,350 @@
+/* Director layer: the dossier sheet over the world, recap and verdict cards,
+   the Continue call to action, the idle pointer and the booking board.
+   Stacking: world 0 < HUD 30 < pointer 31 < board/CTA 32 < dossier 35
+   < dialogue 40 < doc viewer 45 < toasts 50 < verdict 55 < recap 58 < chapter 60. */
+
+/* ================= game mode: no website chrome ================= */
+body.is-game { overflow: hidden; background: var(--night); }
+body.is-game::before { display: none; }
+
+/* ---------- the dossier sheet ---------- */
+body.is-game .app-shell {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: 35;
+  display: block;
+  width: min(1240px, calc(100% - 56px));
+  min-height: 0;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  scroll-padding-top: 150px;
+  background: var(--bg);
+  border-left: 1px solid var(--g-line-strong);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.45);
+  transform: translateX(calc(100% + 64px));
+  visibility: hidden;
+  pointer-events: auto;
+  transition: transform 460ms var(--ease), visibility 0s linear 460ms;
+}
+/* The notebook's binding along the left edge. */
+body.is-game .app-shell::before {
+  content: "";
+  position: sticky;
+  top: 0;
+  float: left;
+  width: 10px;
+  height: 100vh;
+  height: 100dvh;
+  margin-right: -10px;
+  background:
+    radial-gradient(circle at 5px 14px, var(--g-line-strong) 2.2px, transparent 2.8px) 0 0 / 10px 28px,
+    linear-gradient(90deg, color-mix(in srgb, var(--night) 22%, transparent), transparent);
+  z-index: 3;
+  pointer-events: none;
+}
+body.is-game.dossier-open .app-shell {
+  transform: none;
+  visibility: visible;
+  transition: transform 460ms var(--ease), visibility 0s;
+}
+body.is-game[data-world="explore"].dossier-open .app-shell,
+body.is-game.dossier-open #stage { pointer-events: auto; }
+body.is-game .stage { max-width: none; padding-block: 22px 56px; padding-inline: clamp(16px, 3vw, 36px); }
+body.is-game .step-rail { top: 124px; }
+
+/* Without the 3D world the dossier is the whole game. */
+body.is-game.dossier-pinned .app-shell { width: 100%; border-left: 0; box-shadow: none; transition: none; }
+body.is-game.dossier-pinned .app-shell::before { display: none; }
+
+body.is-game.dossier-open #hud-slot,
+body.is-game.dossier-open .gd-cta,
+body.is-game.dossier-open .gd-board,
+body.is-game.dossier-open .gd-pointer { display: none; }
+
+/* ---------- dossier header (dark band, sticky) ---------- */
+.gd-dossier-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: max(12px, env(safe-area-inset-top, 0px)) clamp(16px, 3vw, 36px) 0;
+  background: var(--g-solid) var(--g-grain);
+  color: var(--g-ink);
+  border-bottom: 1px solid var(--g-line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.gd-dossier-head::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--g-player);
+}
+.gd-dossier-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.gd-dossier-id { min-width: 0; }
+.gd-dossier-kicker { font: 600 0.6875rem/1 var(--font-mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--g-player); }
+.gd-dossier-title {
+  margin: 6px 0 4px;
+  font: 800 clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem)/0.95 var(--font-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.gd-dossier-obj { max-width: 70ch; font-size: 0.875rem; line-height: 1.45; color: var(--g-ink-soft); }
+.gd-dossier-tools { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.gd-dossier-tools .clock { color: var(--g-ink); }
+.gd-dossier-route { padding: 6px 0 10px; max-width: none; }
+.gd-dossier-route { margin-top: 4px; }
+.gd-dossier-route .route-wrap { padding-top: 20px; margin-top: 0; }
+
+/* ================= buttons ================= */
+.gd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--g-radius);
+  border: 1px solid transparent;
+  font: 700 0.9375rem/1 var(--font-body);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform 120ms ease;
+}
+.gd-btn:active { transform: translateY(1px); }
+.gd-btn:focus-visible { outline: 2px solid var(--g-focus); outline-offset: 2px; }
+.gd-btn-primary { background: var(--g-player); color: #1a0d03; box-shadow: 0 6px 18px rgba(255, 138, 61, 0.28); }
+.gd-btn-primary:hover { background: #ff9d5c; }
+.gd-btn-primary[aria-disabled="true"] { background: #4a3a30; color: #b9a596; box-shadow: none; cursor: not-allowed; }
+.gd-btn-ghost { background: var(--g-glass-2); color: var(--g-ink); border-color: var(--g-line-strong); }
+.gd-btn-ghost:hover { border-color: var(--g-ink-soft); }
+
+/* ================= Continue call to action ================= */
+.gd-cta {
+  position: fixed;
+  left: 50%;
+  bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  z-index: 32;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  translate: -50% 0;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  font-family: var(--font-body);
+  animation: g-rise 420ms var(--ease) both;
+}
+.gd-cta-hint {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--g-glass);
+  color: var(--g-ink);
+  font-size: 0.8125rem;
+  text-align: center;
+  border: 1px solid var(--g-line);
+}
+.gd-cta-btn { min-height: 52px; padding: 0 26px; font-size: 1.0625rem; animation: g-beacon 1.8s ease-out infinite; }
+.gd-cta-arrow { animation: g-nudge 1.2s ease-in-out infinite; }
+#game-ui:has(.g-dialogue-layer) .gd-cta,
+#game-ui:has(.gd-verdict-layer) .gd-cta { display: none; }
+
+/* ================= recap card ================= */
+.gd-recap {
+  position: fixed; inset: 0; z-index: 58;
+  display: grid; place-items: center;
+  padding: 24px var(--g-gutter);
+  background: radial-gradient(90% 70% at 50% 45%, rgba(20, 42, 68, 0.94), rgba(4, 8, 15, 0.97));
+  color: var(--g-ink);
+  font-family: var(--font-body);
+  cursor: pointer;
+  animation: g-fade 260ms ease-out;
+}
+.gd-recap.is-leaving { animation: sh-out 240ms ease-in forwards; }
+.gd-recap-card { width: min(680px, 100%); text-align: center; }
+.gd-recap-kicker {
+  margin-bottom: 18px;
+  font: 600 0.8125rem/1 var(--font-mono); letter-spacing: 0.32em; text-transform: uppercase;
+  color: var(--g-expert);
+  animation: g-rise 420ms var(--ease) 60ms both;
+}
+.gd-recap-line {
+  font: 600 clamp(1.25rem, 1rem + 1.2vw, 1.75rem)/1.4 var(--font-body);
+  text-wrap: balance;
+  animation: g-rise 520ms var(--ease) 160ms both;
+}
+.gd-recap-hint {
+  margin-top: 28px;
+  font: 600 0.6875rem/1 var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--g-ink-faint);
+  animation: g-fade 400ms ease-out 900ms both;
+}
+
+/* ================= verdict (expert comparison after a lock) ================= */
+.gd-verdict-layer {
+  position: fixed; inset: 0; z-index: 55;
+  display: grid; place-items: center;
+  padding: 16px var(--g-gutter);
+  background: rgba(4, 9, 15, 0.62);
+  font-family: var(--font-body);
+  animation: g-fade 200ms ease-out both;
+  overflow-y: auto;
+}
+.gd-verdict-layer.is-leaving { animation: sh-out 240ms ease-in forwards; }
+.gd-verdict {
+  --tone: var(--g-good);
+  position: relative;
+  width: min(620px, 100%);
+  padding: 28px 26px 22px;
+  border-radius: var(--g-radius);
+  background: #f6f1e7;
+  color: #1d2733;
+  border-top: 4px solid var(--tone);
+  box-shadow: var(--g-shadow);
+  animation: gd-paper 420ms var(--ease) both;
+}
+.gd-verdict-warn { --tone: #c98a12; }
+.gd-verdict-good { --tone: #2c8a4a; }
+.gd-stamp {
+  position: absolute;
+  top: 18px; right: 18px;
+  padding: 6px 12px;
+  border: 3px solid var(--tone);
+  border-radius: 6px;
+  color: var(--tone);
+  font: 800 1.125rem/1 var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  rotate: -9deg;
+  opacity: 0.92;
+  mix-blend-mode: multiply;
+  animation: gd-stamp 520ms cubic-bezier(0.2, 1.4, 0.4, 1) 180ms both;
+}
+.gd-verdict-kicker { font: 600 0.6875rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: #6a5a45; }
+.gd-verdict-title { margin: 10px 150px 12px 0; font: 800 1.75rem/1.02 var(--font-display); letter-spacing: 0.01em; text-transform: uppercase; color: #121a24; }
+.gd-verdict-yours { margin-bottom: 10px; font-size: 0.9375rem; }
+.gd-verdict-text, .gd-verdict-why { font-size: 0.9375rem; line-height: 1.55; color: #2c3a49; }
+.gd-verdict-why { margin-top: 10px; padding-left: 12px; border-left: 3px solid #1d8a80; }
+.gd-verdict-next { margin-top: 12px; padding: 8px 12px; border-radius: 4px; background: #ffe6cf; color: #5a2d06; font-weight: 600; font-size: 0.875rem; }
+.gd-verdict-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+@keyframes gd-paper { from { opacity: 0; transform: translateY(18px) rotate(-1deg); } }
+@keyframes gd-stamp { from { opacity: 0; transform: scale(2.2); } 60% { opacity: 1; transform: scale(0.94); } to { transform: scale(1); } }
+
+/* ================= idle pointer ================= */
+.gd-pointer {
+  position: fixed; left: 0; top: 0; z-index: 31;
+  width: 0; height: 0;
+  pointer-events: none;
+}
+.gd-pointer-arrow {
+  position: absolute; left: -14px; top: -78px;
+  width: 28px; height: 34px;
+  background: var(--g-player);
+  clip-path: polygon(30% 0, 70% 0, 70% 52%, 100% 52%, 50% 100%, 0 52%, 30% 52%);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+  animation: gd-bob 1.1s ease-in-out infinite;
+}
+.gd-pointer-ring {
+  position: absolute; left: -26px; top: -26px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--g-player);
+  animation: gd-ping 1.6s ease-out infinite;
+}
+@keyframes gd-bob { 50% { transform: translateY(-10px); } }
+@keyframes gd-ping { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+
+/* ================= booking board (Chapter 1) ================= */
+.gd-board {
+  position: fixed;
+  left: var(--g-gutter);
+  bottom: max(20px, env(safe-area-inset-bottom, 0px));
+  z-index: 32;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100dvh - 190px);
+  overflow-y: auto;
+  padding: 16px 16px 14px;
+  border-radius: var(--g-radius);
+  border: 1px solid var(--g-line);
+  border-top: 3px solid var(--g-expert);
+  background: var(--g-solid) var(--g-grain);
+  color: var(--g-ink);
+  box-shadow: var(--g-shadow);
+  font-family: var(--font-body);
+  animation: g-rise 380ms var(--ease) both;
+}
+.gd-board-kicker { font: 600 0.6875rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--g-expert); }
+.gd-board-title { margin: 6px 0 4px; font: 800 1.5rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.02em; }
+.gd-board-lede { font-size: 0.8125rem; line-height: 1.45; color: var(--g-ink-soft); }
+.gd-board-list { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 5px; }
+.gd-board-person {
+  width: 100%;
+  display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--g-radius);
+  border: 1px solid var(--g-line);
+  background: var(--g-glass-2);
+  color: inherit; font: inherit; text-align: left;
+  cursor: pointer;
+}
+.gd-board-person:hover, .gd-board-person:focus-visible { border-color: var(--g-player); }
+.gd-board-person.is-booked { border-color: var(--g-player); background: var(--g-player-glow); }
+.gd-board-person[aria-disabled="true"] { opacity: 0.55; }
+.gd-board-check {
+  width: 22px; height: 22px; display: grid; place-items: center;
+  border-radius: 50%; border: 2px solid var(--g-line-strong);
+  font: 700 0.75rem/1 var(--font-mono); color: #1a0d03;
+}
+.is-booked .gd-board-check { background: var(--g-player); border-color: var(--g-player); }
+.gd-board-text { display: grid; gap: 2px; min-width: 0; }
+.gd-board-name { font-weight: 700; font-size: 0.9375rem; }
+.gd-board-role { font-size: 0.75rem; line-height: 1.35; color: var(--g-ink-soft); }
+.gd-board-cost { font: 600 0.6875rem/1 var(--font-mono); color: var(--g-ink-soft); }
+.gd-board-foot { display: flex; align-items: center; gap: 8px; }
+.gd-board-count { margin-right: auto; font-size: 0.875rem; color: var(--g-ink-soft); }
+.gd-board-count b { color: var(--g-ink); font-variant-numeric: tabular-nums; }
+.gd-board-why { margin-top: 8px; font-size: 0.8125rem; font-style: italic; color: var(--g-warn); }
+@media (min-width: 761px) {
+  body.gd-show-labels .world-hotspot .world-hotspot-label { opacity: 1; translate: -50% 0; }
+}
+
+/* ================= evidence bag panel ================= */
+.gd-bag-list { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 6px; }
+.gd-bag-item {
+  width: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--g-radius);
+  border: 1px solid var(--g-line); background: var(--g-glass-2);
+  color: var(--g-ink); font: inherit; text-align: left; cursor: pointer;
+}
+.gd-bag-item:hover, .gd-bag-item:focus-visible { border-color: var(--g-player); }
+.gd-bag-id { font: 700 0.875rem/1 var(--font-mono); color: var(--g-player); }
+.gd-bag-read { font: 600 0.75rem/1 var(--font-mono); color: var(--g-ink-soft); }
+
+/* ================= misc ================= */
+/* While a dialogue is open, notices sit under the HUD instead of over the reply list. */
+#game-ui:has(.g-dialogue-layer) .g-toasts { bottom: auto; top: 84px; }
+.doc-viewer { z-index: 45; }
+.g-dialogue-layer.is-quick, .g-dialogue-layer.is-quick * { animation: none !important; }
+.gd-noscript { padding: 24px; color: #e6edf5; }
+
+/* ================= reduced motion ================= */
+@media (prefers-reduced-motion: reduce) {
+  body.is-game .app-shell { transition: none; }
+  .gd-pointer-arrow, .gd-pointer-ring, .gd-cta-btn, .gd-cta-arrow, .gd-stamp { animation: none; }
+}
+html[data-motion="reduce"] body.is-game .app-shell { transition: none; }
+
+/* ================= phones ================= */
+@media (max-width: 760px) {
+  body.is-game .app-shell { width: 100%; border-left: 0; }
+  body.is-game .app-shell::before { display: none; }
+  body.is-game .step-rail { position: static; }
+  .gd-dossier-top { flex-wrap: wrap; gap: 10px; }
+  .gd-dossier-tools { width: 100%; justify-content: flex-end; }
+  .gd-dossier-tools .clock { margin-right: auto; }
+  .gd-dossier-obj { font-size: 0.8125rem; }
+  .gd-verdict { padding: 22px 18px 18px; }
+  .gd-stamp { position: static; display: inline-block; margin: 0 0 12px; font-size: 0.9375rem; rotate: -4deg; }
+  .gd-verdict-title { margin-right: 0; font-size: 1.5rem; }
+  #game-ui:has(.gd-board) .g-toasts { bottom: auto; top: 150px; }
+  .gd-board { left: 12px; right: 12px; width: auto; max-height: 52dvh; }
+  .gd-cta { bottom: max(16px, env(safe-area-inset-bottom, 0px)); }
+}

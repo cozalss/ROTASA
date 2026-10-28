@@ -1,0 +1,120 @@
+/* Mentor (Selin), one-time tips and glossary terms.
+   Part of the dark game layer: colours come from css/game.css (--g-*).
+   Stacking: tooltip 95 sits above shell panels (70–90). */
+:root {
+  --mt-rose: #f08fb0;
+  --mt-rose-soft: rgba(240, 143, 176, 0.14);
+  --mt-tip-w: 300px;
+}
+
+.mt-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Selin's dialogue box ---------- */
+.g-dialogue.mt-mentor .g-dlg-portrait {
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgba(240, 143, 176, 0.32), transparent 60%),
+    linear-gradient(160deg, #2a1a2a 0%, #140d18 100%);
+}
+.g-dialogue.mt-mentor .g-dlg-avatar { color: var(--mt-rose); }
+/* A small "on the phone" badge in the portrait corner. */
+.g-dialogue.mt-mentor .g-dlg-portrait::after {
+  content: '☎';
+  position: absolute; right: 10px; bottom: 10px;
+  display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--mt-rose); color: #1a0e16;
+  font: 700 0.95rem/1 var(--font-body);
+  box-shadow: 0 0 0 4px rgba(240, 143, 176, 0.18);
+  animation: mt-ring 2.4s ease-in-out 2;
+}
+@keyframes mt-ring {
+  0%, 60%, 100% { transform: rotate(0); }
+  66% { transform: rotate(-14deg); }
+  72% { transform: rotate(12deg); }
+  78% { transform: rotate(-8deg); }
+  84% { transform: rotate(4deg); }
+}
+@media (max-width: 720px) {
+  .g-dialogue.mt-mentor .g-dlg-portrait::after { width: 22px; height: 22px; right: 4px; bottom: 4px; font-size: 0.7rem; box-shadow: none; }
+}
+
+/* ---------- one-time tips (toasts) ---------- */
+.g-toast.mt-tip { --tone: var(--mt-rose); background-image: linear-gradient(90deg, var(--mt-rose-soft), transparent 70%), var(--g-grain); }
+.g-toast.mt-tip .g-toast-icon { background: var(--mt-rose); }
+
+/* ---------- glossary terms ---------- */
+.mt-term {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  cursor: help;
+  transition: text-decoration-color var(--dur, 200ms) ease, background-color var(--dur, 200ms) ease;
+}
+.mt-term:hover, .mt-term[aria-expanded="true"] {
+  text-decoration-style: solid;
+  text-decoration-color: var(--g-player);
+  background-color: var(--g-player-glow);
+}
+.mt-term:focus-visible { outline: 2px solid var(--g-focus); outline-offset: 2px; }
+
+.mt-gloss-tip {
+  position: fixed; z-index: 95;
+  width: min(var(--mt-tip-w), calc(100vw - 24px));
+  padding: 10px 13px 11px;
+  border-radius: var(--g-radius);
+  border: 1px solid var(--g-line-strong);
+  border-top: 2px solid var(--g-expert);
+  background: var(--g-solid) var(--g-grain);
+  color: var(--g-ink);
+  box-shadow: var(--g-shadow);
+  pointer-events: none;
+  animation: mt-tip-in 160ms var(--ease, ease-out) both;
+}
+.mt-gloss-tip[data-side="above"] { border-top: 1px solid var(--g-line-strong); border-bottom: 2px solid var(--g-expert); }
+.mt-gloss-term {
+  margin: 0 0 3px;
+  font: 600 0.6875rem/1.2 var(--font-mono);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--g-expert);
+}
+.mt-gloss-text { margin: 0; font: 400 0.875rem/1.45 var(--font-body); }
+@keyframes mt-tip-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+/* ---------- glossary panel ---------- */
+.mt-glossary-lede { margin: 0 0 14px; color: var(--g-ink-soft); font: 400 0.9375rem/1.5 var(--font-body); }
+.mt-glossary-list { display: grid; gap: 0; margin: 0; }
+.mt-glossary-item {
+  display: grid; grid-template-columns: minmax(9.5rem, 30%) 1fr; gap: 4px 18px;
+  padding: 11px 0; border-top: 1px solid var(--g-line);
+}
+.mt-glossary-item:first-child { border-top: 0; }
+.mt-glossary-item dt {
+  font: 800 1.15rem/1.15 var(--font-display);
+  letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--g-expert);
+}
+.mt-glossary-item dd { margin: 0; font: 400 0.9rem/1.5 var(--font-body); color: var(--g-ink); }
+@media (max-width: 560px) {
+  .mt-glossary-item { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-dialogue.mt-mentor .g-dlg-portrait::after, .mt-gloss-tip { animation: none; }
+}
+:root[data-motion="reduce"] .g-dialogue.mt-mentor .g-dlg-portrait::after,
+:root[data-motion="reduce"] .mt-gloss-tip { animation: none; }

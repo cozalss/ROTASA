@@ -1,0 +1,172 @@
+/* The 3D office ("the world") behind the dossier.
+   body[data-world]: explore = interactive world, backdrop = dimmed and inert, off = hidden.
+   The world is always night, so text on it uses the night tokens in every theme. */
+
+.world-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: none;
+  background: var(--night);
+  overflow: hidden;
+  contain: strict;
+}
+body[data-world="explore"] .world-layer,
+body[data-world="backdrop"] .world-layer { display: block; }
+
+.world-root { position: absolute; inset: 0; }
+.world-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.world-overlay { position: absolute; inset: 0; overflow: clip; pointer-events: none; }
+.world-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- modes ---------- */
+body[data-world="explore"] .ambient-canvas,
+body[data-world="backdrop"] .ambient-canvas { display: none; }
+
+body[data-world="explore"] .app-shell { pointer-events: none; }
+body[data-world="explore"] .app-shell :where(.topbar, .footer, #stage [data-panel], #stage .panel, #stage button, #stage a, #stage input, #stage select, #stage textarea, #stage label) {
+  pointer-events: auto;
+}
+body[data-world="explore"] #stage { pointer-events: none; }
+
+body[data-world="backdrop"] .world-layer { pointer-events: none; }
+body[data-world="backdrop"] .world-canvas { filter: blur(1.5px) saturate(0.85); transform: scale(1.02); }
+body[data-world="backdrop"] .world-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--night) 35%, transparent), color-mix(in srgb, var(--night) 80%, transparent) 75%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--night) 55%, transparent), color-mix(in srgb, var(--night) 70%, transparent));
+}
+body:not([data-world="explore"]) .world-overlay { display: none; }
+
+/* ---------- hotspot buttons (one per hotspot, positioned by JS) ---------- */
+.world-hotspot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--night-ink);
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.world-hotspot.is-offscreen { opacity: 0; }
+.world-hotspot.is-offscreen:focus-visible { opacity: 1; }
+.world-hotspot:focus { outline: none; }
+.world-hotspot:focus-visible { box-shadow: 0 0 0 3px var(--night), 0 0 0 5px #ff8a3d; }
+
+.world-hotspot-dot { position: absolute; inset: 15px; border-radius: 50%; }
+
+.world-hotspot-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  translate: -50% 4px;
+  display: grid;
+  gap: 1px;
+  min-width: max-content;
+  max-width: 240px;
+  padding: 6px 10px 7px;
+  border-radius: var(--radius-m);
+  border: 1px solid color-mix(in srgb, var(--night-ink) 16%, transparent);
+  border-left: 3px solid #ffd9a0;
+  background: color-mix(in srgb, var(--night) 88%, transparent);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur) var(--ease), translate var(--dur) var(--ease);
+}
+.world-hotspot[data-kind="person"] .world-hotspot-label { border-left-color: var(--expert); }
+.world-hotspot[data-kind="event"] .world-hotspot-label { border-left-color: var(--bad); }
+.world-hotspot[data-state="done"] .world-hotspot-label,
+.world-hotspot[data-state="locked"] .world-hotspot-label { border-left-color: color-mix(in srgb, var(--night-ink) 35%, transparent); }
+.world-hotspot.is-below .world-hotspot-label { bottom: auto; top: calc(100% + 6px); }
+.world-hotspot:hover .world-hotspot-label,
+.world-hotspot:focus-visible .world-hotspot-label,
+.world-hotspot.is-hover .world-hotspot-label { opacity: 1; translate: -50% 0; border-left-color: #ff8a3d; }
+
+.world-hotspot-title { font: 600 0.8125rem/1.25 var(--font-body); color: var(--night-ink); white-space: nowrap; }
+.world-hotspot-sub {
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--night-ink) 70%, transparent);
+  white-space: nowrap;
+}
+.world-hotspot[data-state="done"] .world-hotspot-title::after { content: " ✓"; color: var(--good); }
+
+/* ---------- name tags ---------- */
+.world-nametag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -100%;
+  display: grid;
+  justify-items: center;
+  padding: 3px 9px 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--night) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--expert) 45%, transparent);
+  color: var(--night-ink);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+  white-space: nowrap;
+}
+.world-nametag.is-shown { opacity: 1; }
+.world-nametag-name { font: 600 0.75rem/1.2 var(--font-body); }
+.world-nametag-role { font: 400 0.625rem/1.2 var(--font-mono); color: color-mix(in srgb, var(--night-ink) 68%, transparent); }
+
+/* ---------- speech bubbles ---------- */
+.world-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% calc(-100% - 10px);
+  max-width: min(280px, 70vw);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--night-ink);
+  color: var(--night);
+  font: 500 0.8125rem/1.4 var(--font-body);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: world-bubble-in 220ms var(--ease) both;
+}
+.world-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  translate: -50% 0;
+  rotate: 45deg;
+  background: inherit;
+  border-radius: 2px;
+}
+.world-bubble.is-hidden { visibility: hidden; }
+.world-bubble.is-leaving { opacity: 0; transition: opacity 200ms var(--ease); }
+@keyframes world-bubble-in {
+  from { opacity: 0; scale: 0.9; }
+  to { opacity: 1; scale: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-hotspot-label, .world-nametag, .world-bubble.is-leaving { transition: none; }
+  .world-bubble { animation: none; }
+  body[data-world="backdrop"] .world-canvas { transform: none; }
+}

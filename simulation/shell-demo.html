@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04090f">
+<title>Game Shell Harness</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230d1a2b%27/%3E%3Crect x=%274%27 y=%2710%27 width=%2715%27 height=%2710%27 rx=%271.5%27 fill=%27%23ff8a3d%27/%3E%3Cpath d=%27M19 13h5l4 4v3h-9z%27 fill=%27%23ffb27a%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/game.css">
+<link rel="stylesheet" href="css/shell.css">
+<style>
+  /* Harness only: a stand-in for the live 3D office behind the title. */
+  html, body { margin: 0; height: 100%; }
+  body { background: #060d17; color: #e6edf5; font-family: var(--font-body); overflow: hidden; }
+  .fake-world { position: fixed; inset: 0; overflow: hidden; background: radial-gradient(70% 60% at 68% 52%, #23406a 0%, #0e1d31 55%, #050a12 100%); }
+  .fake-floor {
+    position: absolute; left: 66%; top: 60%; width: 1500px; height: 1500px;
+    transform: translate(-50%, -50%) rotateX(60deg) rotateZ(45deg);
+    background:
+      linear-gradient(rgba(143, 163, 184, 0.14) 1px, transparent 1px) 0 0 / 70px 70px,
+      linear-gradient(90deg, rgba(143, 163, 184, 0.14) 1px, transparent 1px) 0 0 / 70px 70px;
+    mask-image: radial-gradient(circle, #000 25%, transparent 62%);
+  }
+  .fake-desk { position: absolute; width: 120px; height: 56px; border-radius: 6px; background: linear-gradient(180deg, #2a4466, #172a42); box-shadow: 0 18px 30px rgba(0, 0, 0, 0.5); transform: skewY(-12deg); }
+  .fake-desk::after { content: ''; position: absolute; left: 30px; top: -26px; width: 44px; height: 30px; border-radius: 3px; background: linear-gradient(180deg, #ffb27a66, #ff8a3d33); box-shadow: 0 0 30px #ff8a3d55; }
+  .demo-panel {
+    position: fixed; right: 16px; top: 16px; z-index: 35; display: grid; gap: 6px; width: 230px; padding: 12px;
+    background: rgba(10, 20, 35, 0.85); border: 1px solid rgba(143, 163, 184, 0.25); border-radius: 6px;
+    max-height: calc(100vh - 32px); overflow: auto;
+  }
+  .demo-panel p { margin: 4px 0 2px; font: 600 0.6875rem/1.2 var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: #ff8a3d; }
+  .demo-panel button { font: 600 0.8125rem/1.2 var(--font-body); text-align: left; padding: 8px 10px; cursor: pointer; color: #e6edf5; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(143, 163, 184, 0.3); border-radius: 4px; }
+  .demo-panel button:hover { border-color: #ff8a3d; }
+  .demo-panel pre { margin: 0; font: 400 0.6875rem/1.4 var(--font-mono); color: #9fb0c3; white-space: pre-wrap; }
+  @media (max-width: 640px) { .demo-panel { left: 16px; width: auto; top: auto; bottom: 16px; max-height: 40vh; grid-template-columns: 1fr 1fr; } .demo-panel p, .demo-panel pre { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<div class="fake-world" aria-hidden="true">
+  <div class="fake-floor"></div>
+  <div class="fake-desk" style="left: 58%; top: 46%"></div>
+  <div class="fake-desk" style="left: 72%; top: 38%"></div>
+  <div class="fake-desk" style="left: 78%; top: 58%"></div>
+  <div class="fake-desk" style="left: 64%; top: 64%"></div>
+</div>
+
+<aside class="demo-panel" aria-label="Harness controls">
+  <p>Flow</p>
+  <button type="button" data-act="loading">Loading → title</button>
+  <button type="button" data-act="title-save">Title (with save)</button>
+  <button type="button" data-act="title-fresh">Title (no save)</button>
+  <button type="button" data-act="pause">Pause (or press Esc)</button>
+  <button type="button" data-act="dialogue">Open a dialogue (blocks pause)</button>
+  <p>Panels</p>
+  <button type="button" data-act="settings">Settings</button>
+  <button type="button" data-act="how">How to play</button>
+  <button type="button" data-act="credits">Credits</button>
+  <button type="button" data-act="trophies-half">Trophies (mid-game)</button>
+  <button type="button" data-act="trophies-expert">Trophies (expert path)</button>
+  <button type="button" data-act="notify">Notify new achievements</button>
+  <p>Settings (persisted)</p>
+  <pre id="settings-out"></pre>
+</aside>
+
+<div id="game-ui"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script type="module">
+  import { showLoading, showTitle, showPause, bindPauseKey, showHowToPlay, showCredits, showSettings } from './js/game/shell.js';
+  import { getSettings, onSettingsChange, applySettings } from './js/game/settings.js';
+  import { showTrophies, notifyNewAchievements } from './js/game/trophies.js';
+  import { toast } from './js/game/toast.js';
+  import { openDialogue } from './js/game/dialogue.js';
+  import { createInitialState, patchSlice } from './js/store.js';
+  import { EXPERT } from './js/data/decisions.js';
+  import { expertRatings } from './js/logic/assessment.js';
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  function midGame() {
+    let s = createInitialState();
+    s = patchSlice(s, 'plan', { scope: 'level2', type: 'informal', interviews: ['deniz', 'burak'] });
+    s = patchSlice(s, 'collect', { collected: ['A', 'B', 'C', 'D', 'E', 'H2'], outage: 'observe' });
+    return patchSlice(s, 'assess', { ratings: { ...expertRatings(), 'TEV-G1': '?' } });
+  }
+
+  function expertPath() {
+    let s = midGame();
+    s = patchSlice(s, 'plan', { interviews: [...EXPERT.interviews] });
+    s = patchSlice(s, 'collect', { collected: [...EXPERT.collected] });
+    s = patchSlice(s, 'assess', { ratings: expertRatings() });
+    s = patchSlice(s, 'conclude', { level: EXPERT.level });
+    s = patchSlice(s, 'report', { automation: EXPERT.automation, attribution: EXPERT.attribution, kvkk: EXPERT.kvkk });
+    return patchSlice(s, 'improve', { actions: [...EXPERT.actions], first: EXPERT.first });
+  }
+
+  let closeTitle = null;
+  function title(hasSave) {
+    closeTitle?.();
+    closeTitle = showTitle({
+      hasSave,
+      saveLabel: 'Chapter 03 · Assess · 14 of 21 goals rated',
+      onContinue: () => { closeTitle(); toast('Continuing your assessment', 'player'); },
+      onNewGame: () => { closeTitle(); toast('New assessment started', 'good'); },
+      onTrophies: () => showTrophies(midGame()),
+    });
+  }
+
+  const pauseOptions = () => ({
+    chapterLabel: 'Chapter 03 · Assess',
+    onResume: () => toast('Resumed'),
+    onDossier: () => toast('Dossier would open here'),
+    onTitle: () => title(true),
+  });
+
+  const ACTIONS = {
+    loading: async () => {
+      closeTitle?.();
+      await showLoading({ label: 'Preparing the office', tasks: [wait(300), () => wait(700), wait(1400)] });
+      title(true);
+    },
+    'title-save': () => title(true),
+    'title-fresh': () => title(false),
+    pause: () => showPause(pauseOptions()),
+    dialogue: () => openDialogue({ speaker: 'murat', lines: ['Press Esc: this closes the dialogue, it does not pause.'] }),
+    settings: () => showSettings(),
+    how: () => showHowToPlay(),
+    credits: () => showCredits(),
+    'trophies-half': () => showTrophies(midGame()),
+    'trophies-expert': () => showTrophies(expertPath()),
+    notify: () => notifyNewAchievements(midGame(), expertPath()),
+  };
+
+  document.querySelector('.demo-panel').addEventListener('click', (e) => {
+    const act = e.target.closest('button')?.dataset.act;
+    if (act) ACTIONS[act]();
+  });
+
+  const out = document.getElementById('settings-out');
+  const paint = () => { out.textContent = JSON.stringify(getSettings(), null, 1); };
+  onSettingsChange(paint);
+  paint();
+  applySettings();
+  bindPauseKey(pauseOptions);
+  window.shellDemo = ACTIONS;
+  ACTIONS.loading();
+</script>
+</body>
+</html>
